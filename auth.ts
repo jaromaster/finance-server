@@ -1,5 +1,6 @@
 import { create } from "https://deno.land/x/djwt@v2.4/mod.ts";
 
+
 /**
  * generate_key creates new key for cryptography
  */
@@ -34,3 +35,6 @@ export async function create_jwt(key: CryptoKey, user_id: number): Promise<Strin
 
     return jwt;
 }
+
+// documentation/tutorial for jwt (verification, decoding, expiration...):
+// https://deno.land/x/djwt@v2.4
