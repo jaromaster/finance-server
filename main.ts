@@ -21,7 +21,7 @@ function main() {
 function show_welcome(port: number) {
     console.log();
     console.log("Starting server...");
-    console.log(`http://localhost:${port}`);
+    console.log(`http://localhost:${port}\n`);
 
 }
 
