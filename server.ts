@@ -19,14 +19,14 @@ export async function start_server(port: number) {
 
 
     // handle post request to /payments
-    router.post("/payments", async (ctx) => handle_post_payment(ctx, key)); 
+    router.post("/payments", async (ctx) => handle_post_payments(ctx, key)); 
 
 
     // handle post request to /login
     router.post("/login", async (ctx) => handle_post_login(ctx, key));
 
 
-    // handle /test (just for testing)
+    // handle /test (just for quick testing)
     router.post("/test", async (ctx)=> {
         
         // do some testing
@@ -41,12 +41,12 @@ export async function start_server(port: number) {
 
 
 /**
- * handle_post_payment handles get request and returns payments as response
+ * handle_post_payments handles get request and returns payments as response
  * 
  * @param ctx
  * @param key
  */
-async function handle_post_payment(ctx: Context, key: CryptoKey) {
+async function handle_post_payments(ctx: Context, key: CryptoKey) {
     
     // TODO: get real data from database
     // simulate payments (dummy data)
@@ -92,7 +92,6 @@ async function handle_post_payment(ctx: Context, key: CryptoKey) {
     }
     
     const user_id = payload.user_id;
-
     console.log("sending payments of user with id:", user_id); // just for testing
 
 
@@ -123,20 +122,18 @@ async function handle_post_login(ctx: Context, key: CryptoKey) {
 
 
 
-    // create jwt from login
-    const jwt = await create_jwt(key, 200); // user_id = 200, just for testing
+    // check if user in database and password correct, get his id
 
-
-    
-    // check if user in database, get his id
 
     // if not: sign up
 
-    // if user in database: create jwt containing the user id
+
+    // if user in database and password correct
+    // create jwt from login
+    const jwt = await create_jwt(key, 200); // user_id = 200, just for testing
+
     
-
-    // return jwt to client
-    ctx.response.body = jwt;
-
+    
+    ctx.response.body = jwt; // send jwt to client
     ctx.response.status = 200; // status ok
 }
