@@ -1,5 +1,6 @@
 import { Payload } from "https://deno.land/x/djwt@v2.4/mod.ts";
 import { Application, Context, Router } from "https://deno.land/x/oak@v10.6.0/mod.ts";
+import { Client } from "https://deno.land/x/mysql@v2.10.2/mod.ts";
 import {create_jwt, generate_key, verify_jwt} from "./auth.ts";
 
 
@@ -8,7 +9,7 @@ import {create_jwt, generate_key, verify_jwt} from "./auth.ts";
  * 
  * @param port
  */
-export async function start_server(port: number) {
+export async function start_server(port: number, db_hostname: string, db_user: string, db_name: string, db_password: string) {
     // create app and router
     const app: Application = new Application();
     const router: Router = new Router();
@@ -17,6 +18,9 @@ export async function start_server(port: number) {
     const key: CryptoKey = await generate_key(); // note: when server stops, key gets lost -> all jwts will get invalid
 
 
+    // init mariadb / mysql client for database connection
+    const client: Client = await create_db_client(db_hostname, db_user, db_name, db_password);
+
 
     // handle post request to /payments
     router.post("/payments", async (ctx) => handle_post_payments(ctx, key)); 
@@ -24,6 +28,11 @@ export async function start_server(port: number) {
 
     // handle post request to /login
     router.post("/login", async (ctx) => handle_post_login(ctx, key));
+
+
+    // handle post request to /signup
+
+    router.post("/signup", async (ctx) => handle_post_signup(ctx, client));
 
 
     // handle /test (just for quick testing)
@@ -37,6 +46,27 @@ export async function start_server(port: number) {
     
     app.use(router.routes()); // use router
     await app.listen({port: port}); // listen on port
+}
+
+
+/**
+ * create_db_client creates a database client and returns it
+ * 
+ * @param hostname 
+ * @param username 
+ * @param db 
+ * @param password 
+ * @returns created database client
+ */
+async function create_db_client(hostname: string, username: string, db: string, password: string): Promise<Client> {
+    const client = await new Client().connect({
+        hostname: hostname,
+        username: username,
+        db: db,
+        password: password,
+    });
+
+    return client;
 }
 
 
@@ -136,4 +166,40 @@ async function handle_post_login(ctx: Context, key: CryptoKey) {
     
     ctx.response.body = jwt; // send jwt to client
     ctx.response.status = 200; // status ok
+}
+
+
+/**
+ * handle_post_signup handles signups (post: json containing username and password as sha3 hash)
+ * 
+ * @param ctx
+ * @param client
+ */
+async function handle_post_signup(ctx: Context, client: Client) {
+    // read body (json)
+    let body = await ctx.request.body({type: "json"}).value;
+
+    // extract username and user password (hash)
+    const username = body.username; // username
+    const password_hash = body.password; // 64 char hash
+
+
+    // store user and hash in database
+    let result = await client.execute(`insert into users(user_name, user_password_hash) values(?, ?)`, [
+        username,
+        password_hash
+    ]);
+    //console.log(result);
+
+    
+    
+    
+    //TODO
+    // inform user about errors
+    
+
+    // user has to login to get jwt
+
+
+    ctx.response.status = 200; // if successful
 }
