@@ -1,7 +1,7 @@
 import { Payload } from "https://deno.land/x/djwt@v2.4/mod.ts";
 import { Application, Context, Router } from "https://deno.land/x/oak@v10.6.0/mod.ts";
 import { Client } from "https://deno.land/x/mysql@v2.10.2/mod.ts";
-import {create_jwt, generate_key, verify_jwt} from "./auth.ts";
+import {create_jwt, generate_key, verify_jwt, hash_password} from "./auth.ts";
 
 
 /**
@@ -27,7 +27,7 @@ export async function start_server(port: number, db_hostname: string, db_user: s
 
 
     // handle post request to /login
-    router.post("/login", async (ctx) => handle_post_login(ctx, key));
+    router.post("/login", async (ctx) => handle_post_login(ctx, key, client));
 
 
     // handle post request to /signup
@@ -139,8 +139,9 @@ async function handle_post_payments(ctx: Context, key: CryptoKey) {
  * 
  * @param ctx
  * @param key
+ * @param client
  */
-async function handle_post_login(ctx: Context, key: CryptoKey) {
+async function handle_post_login(ctx: Context, key: CryptoKey, client: Client) {
 
     // get login_data as json
     const login_data = await ctx.request.body({type: "json"}).value;
@@ -149,27 +150,35 @@ async function handle_post_login(ctx: Context, key: CryptoKey) {
     const username = login_data.username;
     const password = login_data.password;
 
+    const password_hash = await hash_password(password); // hash the password for comparison (check if correct)
 
 
     // check if user in database and password correct, get his id
+    let [result] = await client.query(`SELECT id FROM users WHERE user_name = ? and user_password_hash = ?`, [
+        username,
+        password_hash
+    ]);
 
+    // if user id not found
+    if (result === undefined) {
+        //console.log("username or password incorrect!!!"); // testing
 
-    // if not: sign up
+        ctx.response.status = 403; // Forbidden
+        return;
+    }
 
+    const user_id = result.id; // extract id from result
 
-    // if user in database and password correct
-    // create jwt from login
-    const jwt = await create_jwt(key, 200); // user_id = 200, just for testing
+    // create jwt containing user_id
+    const jwt = await create_jwt(key, user_id);
 
-    
-    
     ctx.response.body = jwt; // send jwt to client
     ctx.response.status = 200; // status ok
 }
 
 
 /**
- * handle_post_signup handles signups (post: json containing username and password as sha3 hash)
+ * handle_post_signup handles signups (post: json containing username and password)
  * 
  * @param ctx
  * @param key
@@ -181,8 +190,9 @@ async function handle_post_signup(ctx: Context, key:CryptoKey, client: Client) {
 
     // extract username and user password (hash)
     const username = body.username; // username
-    const password_hash = body.password; // 64 char hash
+    const password = body.password; // password
 
+    const password_hash = await hash_password(password); // hash the password (sha3-512)
 
     try {
         // store user and hash in database
@@ -199,7 +209,7 @@ async function handle_post_signup(ctx: Context, key:CryptoKey, client: Client) {
         ctx.response.status = 200; // ok
         ctx.response.body = jwt; // send jwt
 
-        
+
     } catch (error) {
         const error_message: string = error.message; // get error message
 

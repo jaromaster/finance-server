@@ -1,5 +1,6 @@
 import { create, getNumericDate, Payload, verify } from "https://deno.land/x/djwt@v2.4/mod.ts";
-
+import { crypto } from "https://deno.land/std@0.144.0/crypto/mod.ts";
+import { encode } from "https://deno.land/std@0.144.0/encoding/hex.ts";
 
 /**
  * generate_key creates new key for cryptography
@@ -50,6 +51,17 @@ export async function verify_jwt(jwt: string, key: CryptoKey): Promise<Payload> 
 }
 
 
+/**
+ * hash_password uses sha3-512 to hash password and return as hexadecimal string
+ * 
+ * @param password 
+ */
+export async function hash_password(password: string): Promise<string> {
+    const hash: ArrayBuffer = await crypto.subtle.digest("SHA3-512", new TextEncoder().encode(password)); // hash the password
+    const hash_as_string: string = new TextDecoder().decode(encode(new Uint8Array(hash))); // convert to hex string
+
+    return hash_as_string;
+}
 
 // documentation/tutorial for jwt:
 // https://deno.land/x/djwt@v2.4
