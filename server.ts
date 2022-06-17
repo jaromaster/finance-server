@@ -31,8 +31,7 @@ export async function start_server(port: number, db_hostname: string, db_user: s
 
 
     // handle post request to /signup
-
-    router.post("/signup", async (ctx) => handle_post_signup(ctx, client));
+    router.post("/signup", async (ctx) => handle_post_signup(ctx, key, client));
 
 
     // handle /test (just for quick testing)
@@ -173,9 +172,10 @@ async function handle_post_login(ctx: Context, key: CryptoKey) {
  * handle_post_signup handles signups (post: json containing username and password as sha3 hash)
  * 
  * @param ctx
+ * @param key
  * @param client
  */
-async function handle_post_signup(ctx: Context, client: Client) {
+async function handle_post_signup(ctx: Context, key:CryptoKey, client: Client) {
     // read body (json)
     let body = await ctx.request.body({type: "json"}).value;
 
@@ -184,22 +184,26 @@ async function handle_post_signup(ctx: Context, client: Client) {
     const password_hash = body.password; // 64 char hash
 
 
-    // store user and hash in database
-    let result = await client.execute(`insert into users(user_name, user_password_hash) values(?, ?)`, [
-        username,
-        password_hash
-    ]);
-    //console.log(result);
+    try {
+        // store user and hash in database
+        let result = await client.execute(`insert into users(user_name, user_password_hash) values(?, ?)`, [
+            username,
+            password_hash
+        ]);
+        
+        const user_id = (result.lastInsertId as number); // get id of inserted user
 
-    
-    
-    
-    //TODO
-    // inform user about errors
-    
+        // create jwt using user_id
+        const jwt = await create_jwt(key, user_id);
 
-    // user has to login to get jwt
+        ctx.response.status = 200; // ok
+        ctx.response.body = jwt; // send jwt
 
+        
+    } catch (error) {
+        const error_message: string = error.message; // get error message
 
-    ctx.response.status = 200; // if successful
+        ctx.response.status = 500; // internal server error
+        ctx.response.body = error_message; // return error message to frontend
+    }
 }
