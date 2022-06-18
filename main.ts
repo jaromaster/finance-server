@@ -26,6 +26,7 @@ function main() {
     start_server(PORT, DB_HOST, DB_USER, DB_NAME, DB_PASSWORD);
 }
 
+
 /**
  * get_dbhost_from_args searches cmd args and returns dbhost if in args, else ""
  * 

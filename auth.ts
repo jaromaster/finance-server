@@ -4,6 +4,8 @@ import { encode } from "https://deno.land/std@0.144.0/encoding/hex.ts";
 
 /**
  * generate_key creates new key for cryptography
+ * 
+ * @returns key
  */
 export async function generate_key(): Promise<CryptoKey> {
 
@@ -25,6 +27,7 @@ export async function generate_key(): Promise<CryptoKey> {
  * 
  * @param key
  * @param user_id
+ * @returns jwt
  */
 export async function create_jwt(key: CryptoKey, user_id: number): Promise<string> {
     
@@ -42,7 +45,8 @@ export async function create_jwt(key: CryptoKey, user_id: number): Promise<strin
  * verify_jwt verifies json web tokens and returns their payload, if jwt invalid: error
  * 
  * @param jwt 
- * @param key 
+ * @param key
+ * @returns payload
  */
 export async function verify_jwt(jwt: string, key: CryptoKey): Promise<Payload> {
     
@@ -54,7 +58,8 @@ export async function verify_jwt(jwt: string, key: CryptoKey): Promise<Payload> 
 /**
  * hash_password uses sha3-512 to hash password and return as hexadecimal string
  * 
- * @param password 
+ * @param password
+ * @returns hash as hex string
  */
 export async function hash_password(password: string): Promise<string> {
     const hash: ArrayBuffer = await crypto.subtle.digest("SHA3-512", new TextEncoder().encode(password)); // hash the password
