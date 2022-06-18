@@ -34,12 +34,8 @@ export async function start_server(port: number, db_hostname: string, db_user: s
     router.post("/signup", async (ctx) => handle_post_signup(ctx, key, client));
 
 
-    // handle /test (just for quick testing)
-    router.post("/test", async (ctx)=> {
-        
-        // do some testing
-        ctx.response.body = "this is the testing route";
-    });
+    // handle post request to /addpayments
+    router.post("/addpayments", async (ctx) => handle_post_add_payments(ctx, key, client));
 
 
     
@@ -135,7 +131,7 @@ async function handle_post_payments(ctx: Context, key: CryptoKey) {
 
 
 /**
- * handle_post_login handles logins (post requests)
+ * handle_post_login handles logins (post requests) and returns jwt if successful
  * 
  * @param ctx
  * @param key
@@ -216,4 +212,82 @@ async function handle_post_signup(ctx: Context, key:CryptoKey, client: Client) {
         ctx.response.status = 500; // internal server error
         ctx.response.body = error_message; // return error message to frontend
     }
+}
+
+
+/**
+ * handle_post_add_payments handles new payments that need to be inserted to db
+ * 
+ * @param ctx 
+ * @param key 
+ */
+async function handle_post_add_payments(ctx: Context, key: CryptoKey, client: Client) {
+    // read body as json
+    const body = await ctx.request.body({type: "json"}).value; // {token: some_valid_token, payments: [payment1, payment2, ...]}
+
+    const jwt = body.token; // get token
+    const payments = body.payments; // payments
+
+    try {
+        const payload: Payload = await verify_jwt(jwt, key); // check jwt
+        const user_id = payload.user_id; // get user id
+
+        // add user_id to each payment (to store in database)
+        for (let i = 0; i < payments.length; i++) {
+            payments[i].user_id = user_id;
+        }
+
+        // insert payments to database
+        const message: string = await insert_payments_db(payments, client);
+        
+        // check for errors
+        if (message === "payments added") { // "payments added" if successful
+            ctx.response.status = 200; // ok
+            ctx.response.body = message;
+        }
+        else {
+            // insertion went wrong (incorrect data, missing fields)
+            ctx.response.status = 500; // internal server error
+            ctx.response.body = message;
+        }
+
+    } catch (error) {
+        // jwt invalid
+        ctx.response.status = 403; // Forbidden
+    }
+}
+
+
+/**
+ * insert_payments_db takes payments and inserts them into the database
+ * 
+ * @param payments 
+ * @param client 
+ * @returns string ("payments added" or error.message)
+ */
+async function insert_payments_db(payments: Array<any>, client: Client): Promise<string> {
+    // insert statement
+    const insert_sql = 
+    `insert into payments(user_id, payment_date, payment_time, payment_amount, payment_category, payment_text) values (?, ?, ?, ?, ?, ?)`;
+    
+    try {
+        // insert each payment into database
+        for (let i = 0; i < payments.length; i++) {
+            const payment = payments[i];
+
+            await client.execute(insert_sql, [
+                payment.user_id,
+                payment.date,
+                payment.time,
+                payment.amount,
+                payment.category,
+                payment.text
+            ]);
+        }
+
+    } catch (error) {
+        return error.message;
+    }
+
+    return "payments added";
 }
