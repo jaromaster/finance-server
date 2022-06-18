@@ -38,6 +38,10 @@ export async function start_server(port: number, db_hostname: string, db_user: s
     router.post("/addpayments", async (ctx) => handle_post_add_payments(ctx, key, client));
 
 
+    // handle delete request to /delpayments
+    router.delete("/delpayments", async (ctx) => handle_delete_del_payments(ctx, key, client));
+
+
     
     app.use(router.routes()); // use router
     await app.listen({port: port}); // listen on port
@@ -290,4 +294,76 @@ async function insert_payments_db(payments: Array<any>, client: Client): Promise
     }
 
     return "payments added";
+}
+
+
+/**
+ * handle_delete_del_payments handles delete requests to remove payments
+ * 
+ * @param ctx 
+ * @param key 
+ * @param client
+ */
+async function handle_delete_del_payments(ctx: Context, key: CryptoKey, client: Client) {
+    // read body as json
+    const body = await ctx.request.body({type: "json"}).value;
+
+    const payment_ids = body.payment_ids; // get list of payment ids (to delete)
+    const jwt = body.token; // get jwt
+
+    // check jwt
+    try {
+        const payload: Payload = await verify_jwt(jwt, key); // check if jwt is valid
+        const user_id: number = (payload.user_id as number); // get id of user
+
+        console.log("User with id", user_id, "deletes payments:", payment_ids);
+
+
+        // delete payments (payment_ids) from database
+        const message: string = await delete_payments_db(payment_ids, user_id, client);
+
+        // error handling
+        if (message === "payments deleted") {
+            ctx.response.status = 200; // ok
+            ctx.response.body = message;
+        }
+        else {
+            ctx.response.status = 500; // Internal server error
+            ctx.response.body = message;
+        }
+
+    } catch (error) {
+        // jwt invalid
+        ctx.response.status = 403; // Forbidden
+    }
+}
+
+
+/**
+ * delete_payments_db deletes payments with id from database
+ * 
+ * @param payment_ids 
+ * @param client
+ * @returns string ("payments deleted" or error.message)
+ */
+async function delete_payments_db(payment_ids: Array<number>, user_id: number, client: Client): Promise<string> {
+    const delete_statement = `delete from payments where user_id = ? and id = ?`;
+
+    try {
+        // delete each payment
+        for (let i = 0; i < payment_ids.length; i++) {
+            const id: number = payment_ids[i];
+
+            // delete payment with id
+            await client.execute(delete_statement, [
+                user_id,
+                id
+            ]);
+        }
+
+    } catch (error) {
+        return error.message;
+    }
+    
+    return "payments deleted";
 }
