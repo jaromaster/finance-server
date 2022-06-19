@@ -32,7 +32,7 @@ function main() {
  * 
  * @returns argument
  */
-function get_dbhost_from_args(): string {
+export function get_dbhost_from_args(): string {
     const args = Deno.args;
     const arg_key = "dbhost="; // key to search for
 
@@ -53,7 +53,7 @@ function get_dbhost_from_args(): string {
  * 
  * @returns argument
  */
- function get_dbpass_from_args(): string {
+export function get_dbpass_from_args(): string {
     const args = Deno.args;
     const arg_key = "dbpass="; // key to search for
 
