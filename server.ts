@@ -2,7 +2,7 @@ import { Payload } from "https://deno.land/x/djwt@v2.4/mod.ts";
 import { Application, Context, Router } from "https://deno.land/x/oak@v10.6.0/mod.ts";
 import { Client } from "https://deno.land/x/mysql@v2.10.2/mod.ts";
 import {create_jwt, generate_key, verify_jwt, hash_password} from "./auth.ts";
-import { create_db_client, insert_payments_db, delete_payments_db, get_payments_db } from "./database_funcs.ts";
+import { create_db_client, insert_payments_db, delete_payments_db, get_payments_db, delete_user_db } from "./database_funcs.ts";
 
 
 /**
@@ -29,6 +29,9 @@ export async function start_server(port: number, db_hostname: string, db_user: s
 
     // handle post request to /login
     router.post("/login", async (ctx) => handle_post_login(ctx, key, client));
+
+    // handle delete request to /deluser
+    router.delete("/deluser", async (ctx) => handle_delete_del_user(ctx, key, client));
 
 
     // PAYMENTS
@@ -245,5 +248,43 @@ async function handle_delete_del_payments(ctx: Context, key: CryptoKey, client: 
     } catch (error) {
         // jwt invalid
         ctx.response.status = 403; // Forbidden
+    }
+}
+
+
+/**
+ * handle_delete_del_user handles delete requests to delete users
+ * 
+ * @param ctx 
+ * @param key 
+ * @param client 
+ */
+async function handle_delete_del_user(ctx: Context, key: CryptoKey, client: Client) {
+    // get body as json
+    const body = await ctx.request.body({type: "json"}).value;
+
+    const jwt = body.token; // get jwt
+
+    try {
+        const payload: Payload = await verify_jwt(jwt, key); // check jwt
+        const user_id: number = payload.user_id as number; // get user_id
+
+        // delete user from database
+        const message: string = await delete_user_db(user_id, client);
+
+        // error handling
+        if (message === "user deleted") {
+            ctx.response.status = 200; // ok
+            ctx.response.body = message;
+        }
+        else {
+            ctx.response.status = 500; // internal server error
+            ctx.response.body = message;
+        }
+
+        // remove access to payments / resources on server
+        
+    } catch (error) {
+        ctx.response.status = 403; // forbidden
     }
 }

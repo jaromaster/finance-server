@@ -105,3 +105,25 @@ export async function delete_payments_db(payment_ids: Array<number>, user_id: nu
     
     return "payments deleted";
 }
+
+
+/**
+ * delete_user_db deletes user with id from database
+ * 
+ * @param user_id 
+ * @param client 
+ * @returns string ("user deleted" or error.message)
+ */
+export async function delete_user_db(user_id: number, client: Client): Promise<string> {
+    const delete_statement = `delete from users where id = ?`;
+
+    try {
+        await client.execute(delete_statement, [
+            user_id
+        ]);
+    } catch (error) {
+        return error.message;
+    }
+    
+    return "user deleted";
+}
