@@ -127,3 +127,26 @@ export async function delete_user_db(user_id: number, client: Client): Promise<s
     
     return "user deleted";
 }
+
+
+/**
+ * check_user_exists checks if user is in database
+ * 
+ * @param user_id 
+ * @param client 
+ * @returns boolean (if user in database)
+ */
+export async function check_user_exists(user_id: number, client: Client): Promise<boolean> {
+    const select_statement = `select exists(select 1 from users where id = ?) as "exists"`;
+
+    // check if exists
+    const exists = await client.query(select_statement, [user_id]);
+
+    // not in db
+    if (exists[0].exists == 0) {
+        return false;
+    }
+
+    // in db
+    return true;
+}
