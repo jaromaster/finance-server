@@ -70,7 +70,7 @@ export async function start_server(port: number, db_hostname: string, db_user: s
     router.post("/login", async (ctx) => handle_post_login(ctx, key, client));
 
     // handle delete request to /deluser
-    router.delete("/deluser", async (ctx) => handle_delete_del_user(ctx, key, client));
+    router.delete("/deluser", async (ctx) => handle_delete_del_user(ctx, client, app));
 
 
     // PAYMENTS
@@ -280,35 +280,29 @@ async function handle_delete_del_payments(ctx: Context, client: Client, app: App
  * handle_delete_del_user handles delete requests to delete users
  * 
  * @param ctx 
- * @param key 
- * @param client 
+ * @param client
+ * @param app
  */
-async function handle_delete_del_user(ctx: Context, key: CryptoKey, client: Client) {
-    // get body as json
-    const body = await ctx.request.body({type: "json"}).value;
+async function handle_delete_del_user(ctx: Context, client: Client, app: Application) {
 
-    const jwt = body.token; // get jwt
+    const user_id: number = app.state.user_id as number; // get user_id from state
 
-    try {
-        const payload: Payload = await verify_jwt(jwt, key); // check jwt
-        const user_id: number = payload.user_id as number; // get user_id
-
-        // delete user from database
-        const message: string = await delete_user_db(user_id, client);
-
-        // error handling
-        if (message === "user deleted") {
-            ctx.response.status = 200; // ok
-            ctx.response.body = message;
-        }
-        else {
-            ctx.response.status = 500; // internal server error
-            ctx.response.body = message;
-        }
-
-        // remove access to payments / resources on server
-
-    } catch (error) {
-        ctx.response.status = 403; // forbidden
+    // no valid user_id -> no token was sent
+    if (user_id === undefined){
+        ctx.response.status = 403; // Forbidden
+        return;
     }
+
+    // delete user from database
+    const message: string = await delete_user_db(user_id, client);
+
+    // error handling
+    if (message === "user deleted") {
+        ctx.response.status = 200; // ok
+    }
+    else {
+        ctx.response.status = 500; // internal server error
+    }
+
+    ctx.response.body = message;
 }

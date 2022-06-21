@@ -1,4 +1,5 @@
 import { assertEquals, assertNotEquals, assertRejects } from "https://deno.land/std@0.104.0/testing/asserts.ts";
+import axiod from "https://deno.land/x/axiod@0.26.1/mod.ts";
 import { Payload } from "https://deno.land/x/djwt@v2.4/mod.ts";
 import { Client } from "https://deno.land/x/mysql@v2.10.2/mod.ts";
 import { create_jwt, generate_key, hash_password, verify_jwt } from "./auth.ts";
@@ -90,3 +91,115 @@ Deno.test("test create_db_client()", async () => {
 });
 
 // TODO TEST API
+/**
+ * test /signup
+ */
+Deno.test({
+    name: "test /signup (creating testuser)",
+    async fn () { 
+        const username = "testuser";
+        const password = "password";
+
+        const response = await fetch("http://localhost:8000/signup", {
+            method: "POST",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({username: username, password: password})
+        });
+
+        assertEquals(response.status, 200); // check if ok
+
+        const token = await response.text(); // get jwt
+
+        assertEquals(token.split(".").length, 3); // check if token has valid syntax
+    },
+    // deactivate ressource checking (else error because leaking async ops)
+    sanitizeResources: false,
+    sanitizeOps: false
+});
+
+
+/**
+ * test /login
+ */
+Deno.test({
+    name: "test /login (logging in as testuser)",
+    async fn () { 
+        const username = "testuser";
+        const password = "password";
+
+        const response = await fetch("http://localhost:8000/login", {
+            method: "POST",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({username: username, password: password})
+        });
+
+        assertEquals(response.status, 200); // check if ok
+
+        const token = await response.text(); // get jwt
+
+        assertEquals(token.split(".").length, 3); // check if token has valid syntax
+    },
+    // deactivate ressource checking (else error because leaking async ops)
+    sanitizeResources: false,
+    sanitizeOps: false
+});
+
+
+/**
+ * test /deluser
+ */
+ Deno.test({
+    name: "test /deluser (delete testuser)",
+    async fn () { 
+        const username = "testuser";
+        const password = "password";
+
+        // login to get token (should work)
+        const response = await fetch("http://localhost:8000/login", {
+            method: "POST",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({username: username, password: password})
+        });
+
+        assertEquals(response.status, 200); // check if ok
+
+        const token = await response.text(); // get jwt
+
+
+        // delete user with token
+        const response_del = await fetch("http://localhost:8000/deluser", {
+            method: "DELETE",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({token: token}) // use token
+        });
+
+        assertEquals(response_del.status, 200); // check if ok
+
+        // login again (should not work, user was deleted)
+        const response_retry = await fetch("http://localhost:8000/login", {
+            method: "POST",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({username: username, password: password})
+        });
+
+        assertEquals(response_retry.status, 403); // check if Forbidden
+    },
+    // deactivate ressource checking (else error because leaking async ops)
+    sanitizeResources: false,
+    sanitizeOps: false
+});
