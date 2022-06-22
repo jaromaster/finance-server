@@ -1,5 +1,4 @@
 import { assertEquals, assertNotEquals, assertRejects } from "https://deno.land/std@0.104.0/testing/asserts.ts";
-import axiod from "https://deno.land/x/axiod@0.26.1/mod.ts";
 import { Payload } from "https://deno.land/x/djwt@v2.4/mod.ts";
 import { Client } from "https://deno.land/x/mysql@v2.10.2/mod.ts";
 import { create_jwt, generate_key, hash_password, verify_jwt } from "./auth.ts";
@@ -226,6 +225,7 @@ Deno.test({
     sanitizeResources: false,
     sanitizeOps: false
 });
+
 
 /**
  * test /addpayments
