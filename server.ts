@@ -10,7 +10,7 @@ import { create_db_client, insert_payments_db, delete_payments_db, get_payments_
  * 
  * @param port
  */
-export async function start_server(port: number, db_hostname: string, db_user: string, db_name: string, db_password: string) {
+export async function start_server(port: number, db_hostname: string, db_user: string, db_name: string, db_password: string, cert_path: string, key_path: string) {
     // create app and router
     const app: Application = new Application();
     const router: Router = new Router();
@@ -85,9 +85,8 @@ export async function start_server(port: number, db_hostname: string, db_user: s
 
     
     app.use(router.routes()); // use router
-    await app.listen({port: port}); // listen on port
+    await app.listen({port: port, secure: true, certFile: cert_path, keyFile: key_path}); // listen on port, use https
 }
-
 
 /**
  * handle_post_payments returns payments as response

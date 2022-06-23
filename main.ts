@@ -10,6 +10,8 @@ function main() {
     const DB_USER = "dbuser";
     const DB_NAME = "finance";
     const DB_PASSWORD = get_dbpass_from_args(); // get password of database user from cmd arguments
+    const CERT_PATH = "./keys/server.crt"; // public key
+    const KEY_PATH = "./keys/server.key"; // private key
 
     // check if DB_HOST and DB_PASSWORD are valid 
     if (DB_HOST.length==0){
@@ -23,7 +25,7 @@ function main() {
 
 
     show_welcome(PORT);
-    start_server(PORT, DB_HOST, DB_USER, DB_NAME, DB_PASSWORD);
+    start_server(PORT, DB_HOST, DB_USER, DB_NAME, DB_PASSWORD, CERT_PATH, KEY_PATH);
 }
 
 
