@@ -101,7 +101,7 @@ async function create_testuser(): Promise<Response> {
     const password = "password";
 
     // create user
-    const response = await fetch("http://localhost:8000/signup", {
+    const response = await fetch("https://localhost:8000/signup", {
         method: "POST",
         headers: {
             'Accept': 'application/json',
@@ -123,7 +123,7 @@ async function create_testuser(): Promise<Response> {
 async function delete_testuser(token: string): Promise<Response> {
 
     // delete user with token
-    const response = await fetch("http://localhost:8000/deluser", {
+    const response = await fetch("https://localhost:8000/deluser", {
         method: "DELETE",
         headers: {
             'Accept': 'application/json',
@@ -146,7 +146,7 @@ async function login_testuser(): Promise<Response> {
     const password = "password";
 
     // login user to get response with token
-    const response = await fetch("http://localhost:8000/login", {
+    const response = await fetch("https://localhost:8000/login", {
         method: "POST",
         headers: {
             'Accept': 'application/json',
@@ -245,7 +245,7 @@ Deno.test({
         ];
 
         // send payments to server (should work)
-        const response_add = await fetch("http://localhost:8000/addpayments", {
+        const response_add = await fetch("https://localhost:8000/addpayments", {
             method: "POST",
             headers: {
                 'Accept': 'application/json',
@@ -279,7 +279,7 @@ Deno.test({
         const token = await response_login.text(); // get token
 
         // get payments from server (should work)
-        const response = await fetch("http://localhost:8000/payments", {
+        const response = await fetch("https://localhost:8000/payments", {
             method: "POST",
             headers: {
                 'Accept': 'application/json',
@@ -319,7 +319,7 @@ Deno.test({
         const token = await response_login.text(); // get token
 
         // get payments from server (should work)
-        const response = await fetch("http://localhost:8000/payments", {
+        const response = await fetch("https://localhost:8000/payments", {
             method: "POST",
             headers: {
                 'Accept': 'application/json',
@@ -339,7 +339,7 @@ Deno.test({
         }
 
         // delete all payments from server (should work)
-        const response_del = await fetch("http://localhost:8000/delpayments", {
+        const response_del = await fetch("https://localhost:8000/delpayments", {
             method: "DELETE",
             headers: {
                 'Accept': 'application/json',
@@ -352,7 +352,7 @@ Deno.test({
 
 
         // check if all payments are deleted
-        const response_payment = await fetch("http://localhost:8000/payments", {
+        const response_payment = await fetch("https://localhost:8000/payments", {
             method: "POST",
             headers: {
                 'Accept': 'application/json',

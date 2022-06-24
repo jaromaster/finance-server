@@ -33,7 +33,7 @@ export async function start_server(port: number, db_hostname: string, db_user: s
         
         // check if token in body
         if ("token" in body) {
-            console.log("jwt found"); // testing
+            //console.log("jwt found"); // testing
             const jwt: string = body.token as string; // extract jwt
 
             try {

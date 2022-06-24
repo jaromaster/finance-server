@@ -4,7 +4,7 @@
 
 # How to run tests
 
-## deno test --allow-net -- dbhost="some ip" dbpass="some password"
+## deno test --allow-net --allow-read --unsafely-ignore-certificate-errors -- dbhost="some ip" dbpass="some password"
 
 #### dbhost...hostname of database
 #### dbpass...password of database user
