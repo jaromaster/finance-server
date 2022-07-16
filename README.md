@@ -16,5 +16,5 @@
 - Oak (Rest)
 
 ## Related
-- Finance Client, frontend (coming soon)
+- [Finance Client](https://github.com/jaromaster/finance-client)
 - Finance App, frontend (coming soon)
